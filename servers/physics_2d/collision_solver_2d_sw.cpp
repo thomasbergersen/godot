@@ -34,7 +34,7 @@
 #define collision_solver sat_2d_calculate_penetration
 //#define collision_solver gjk_epa_calculate_penetration
 
-bool CollisionSolver2DSW::solve_static_line(const Shape2DSW *p_shape_A, const Transform2D &p_transform_A, const Shape2DSW *p_shape_B, const Transform2D &p_transform_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result) {
+bool CollisionSolver2DSW::solve_static_line(const Shape2DSW *p_shape_A, const Transform2D &p_transform_A, const Shape2DSW *p_shape_B, const Transform2D &p_transform_B, const Vector2 &p_motion_B, CallbackResult p_result_callback, void *p_userdata, bool p_swap_result, real_t p_margin) {
 	const LineShape2DSW *line = static_cast<const LineShape2DSW *>(p_shape_A);
 	if (p_shape_B->get_type() == Physics2DServer::SHAPE_LINE) {
 		return false;
@@ -52,7 +52,9 @@ bool CollisionSolver2DSW::solve_static_line(const Shape2DSW *p_shape_A, const Tr
 	bool found = false;
 
 	for (int i = 0; i < support_count; i++) {
+		supports[i] += p_margin * supports[i].normalized();
 		supports[i] = p_transform_B.xform(supports[i]);
+		supports[i] += p_motion_B;
 		real_t pd = n.dot(supports[i]);
 		if (pd >= d) {
 			continue;
@@ -215,9 +217,9 @@ bool CollisionSolver2DSW::solve(const Shape2DSW *p_shape_A, const Transform2D &p
 		}
 
 		if (swap) {
-			return solve_static_line(p_shape_B, p_transform_B, p_shape_A, p_transform_A, p_result_callback, p_userdata, true);
+			return solve_static_line(p_shape_B, p_transform_B, p_shape_A, p_transform_A, p_motion_A, p_result_callback, p_userdata, true, p_margin_A);
 		} else {
-			return solve_static_line(p_shape_A, p_transform_A, p_shape_B, p_transform_B, p_result_callback, p_userdata, false);
+			return solve_static_line(p_shape_A, p_transform_A, p_shape_B, p_transform_B, p_motion_B, p_result_callback, p_userdata, false, p_margin_B);
 		}
 
 	} else if (type_A == Physics2DServer::SHAPE_RAY) {
